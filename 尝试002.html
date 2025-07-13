@@ -1,0 +1,730 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>言姝的探索世界</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            overflow: hidden;
+            background: linear-gradient(135deg, #f8f4e9, #e6eef7);
+            font-family: 'Montserrat', sans-serif;
+            color: #5a6b7c;
+            height: 100vh;
+            perspective: 1000px;
+        }
+
+        #scene-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 1;
+        }
+
+        #content-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 2;
+            pointer-events: none;
+        }
+
+        .header {
+            position: absolute;
+            top: 30px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            pointer-events: none;
+        }
+
+        h1 {
+            font-size: 2.8rem;
+            font-weight: 300;
+            letter-spacing: 2px;
+            color: #5a6b7c;
+            text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+            position: relative;
+            display: inline-block;
+            max-width: 90%;
+            padding: 0 20px;
+        }
+
+        h1 .name {
+            color: #ff9a76;
+            font-weight: 400;
+            position: relative;
+        }
+
+        h1 .name::after {
+            content: '';
+            position: absolute;
+            bottom: -5px;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, #ff9a76, transparent);
+        }
+
+        .subtitle {
+            font-size: 1.1rem;
+            margin-top: 15px;
+            font-weight: 300;
+            color: #7d8a99;
+            letter-spacing: 1px;
+        }
+
+        .floating-text {
+            position: absolute;
+            bottom: 220px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255, 255, 255, 0.8);
+            padding: 12px 25px;
+            border-radius: 30px;
+            font-size: 1.1rem;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+            color: #ff9a76;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            pointer-events: auto;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+        }
+
+        .floating-text:hover {
+            background: rgba(255, 255, 255, 0.95);
+            transform: translateX(-50%) translateY(-3px);
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+        }
+
+        .floating-text i {
+            margin-right: 10px;
+            font-size: 1.2rem;
+        }
+
+        .mobile-notice {
+            display: none;
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            color: #5a6b7c;
+            font-size: 0.9rem;
+            padding: 0 20px;
+            z-index: 3;
+        }
+
+        .info-bubble {
+            position: absolute;
+            bottom: 40px;
+            right: 40px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.8);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(5px);
+            z-index: 10;
+            pointer-events: auto;
+            transition: all 0.3s ease;
+        }
+
+        .info-bubble:hover {
+            transform: scale(1.1);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .info-bubble i {
+            font-size: 1.5rem;
+            color: #5a6b7c;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+
+            .subtitle {
+                font-size: 0.9rem;
+            }
+
+            .mobile-notice {
+                display: block;
+            }
+
+            .floating-text {
+                bottom: 180px;
+                padding: 10px 20px;
+                font-size: 1rem;
+            }
+
+            .info-bubble {
+                bottom: 20px;
+                right: 20px;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.6rem;
+            }
+        }
+
+        .floating-label {
+            position: absolute;
+            background: rgba(255, 255, 255, 0.85);
+            padding: 8px 15px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            pointer-events: auto;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            z-index: 5;
+            backdrop-filter: blur(5px);
+            display: flex;
+            align-items: center;
+            max-width: 160px;
+            text-align: center;
+            line-height: 1.4;
+        }
+
+        .floating-label:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.95);
+        }
+
+        .floating-label i {
+            margin-right: 8px;
+            font-size: 1rem;
+        }
+
+        .clock-label {
+            max-width: 300px;
+            padding: 15px 20px;
+            line-height: 1.6;
+            font-size: 0.95rem;
+            white-space: normal;
+            word-wrap: break-word;
+            text-align: left;
+        }
+    </style>
+</head>
+
+<body>
+    <div id="scene-container"></div>
+
+    <div id="content-overlay">
+        <div class="header">
+            <h1>在这里认识<span class="name">言姝</span>吧，她溜走去探索世界了</h1>
+            <div class="subtitle">一个充满奇思妙想的探索者，在Monument Valley的世界中寻找灵感</div>
+        </div>
+
+        <a id="chat-button" href="https://udify.app/chatbot/UQQwhb97PfJeEAhr" target="_blank" class="floating-text">
+            <i class="fas fa-comments"></i> 和言姝聊天
+        </a>
+
+        <div class="info-bubble">
+            <i class="fas fa-info"></i>
+        </div>
+
+        <div class="mobile-notice">点击并拖动来探索3D环境</div>
+    </div>
+
+    <script>
+        // 初始化Three.js场景
+        const scene = new THREE.Scene();
+        scene.background = new THREE.Color(0xf8f4e9);
+        scene.fog = new THREE.Fog(0xf8f4e9, 20, 50);
+
+        // 相机设置
+        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 5, 15);
+
+        // 渲染器设置
+        const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        renderer.shadowMap.enabled = true;
+        document.getElementById('scene-container').appendChild(renderer.domElement);
+
+        // OrbitControls用于相机移动
+        const controls = new THREE.OrbitControls(camera, renderer.domElement);
+        controls.enableDamping = true;
+        controls.dampingFactor = 0.05;
+        controls.screenSpacePanning = false;
+        controls.minDistance = 8;
+        controls.maxDistance = 25;
+        controls.maxPolarAngle = Math.PI / 2 - 0.1;
+
+        // 柔和的定向光源
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+        directionalLight.position.set(10, 20, 15);
+        directionalLight.castShadow = true;
+        directionalLight.shadow.mapSize.width = 1024;
+        directionalLight.shadow.mapSize.height = 1024;
+        directionalLight.shadow.camera.near = 0.5;
+        directionalLight.shadow.camera.far = 50;
+        directionalLight.shadow.camera.left = -20;
+        directionalLight.shadow.camera.right = 20;
+        directionalLight.shadow.camera.top = 20;
+        directionalLight.shadow.camera.bottom = -20;
+        directionalLight.shadow.radius = 4;
+        scene.add(directionalLight);
+
+        // 创建柔和的填充光
+        const fillLight = new THREE.DirectionalLight(0xfff0e6, 0.4);
+        fillLight.position.set(-10, 10, -10);
+        scene.add(fillLight);
+
+        // 调色板
+        const colors = {
+            pink: new THREE.Color(0xffd1dc),
+            mint: new THREE.Color(0xa8e6cf),
+            blue: new THREE.Color(0xadd8e6),
+            white: new THREE.Color(0xf8f4e9),
+            gray: new THREE.Color(0xd3d3d3),
+            accent1: new THREE.Color(0xffcc66), // 暖橙色
+            accent2: new THREE.Color(0x76b5ff)  // 钴蓝色
+        };
+
+        // 哑光材质
+        const matteMaterial = new THREE.MeshStandardMaterial({
+            color: colors.blue,
+            roughness: 0.7,
+            metalness: 0.1
+        });
+
+        // 创建中央城堡结构
+        const castleGroup = new THREE.Group();
+        scene.add(castleGroup);
+
+        // 创建圆角立方体的函数
+        function createRoundedCube(width, height, depth, radius, color) {
+            const geometry = new THREE.BoxGeometry(width, height, depth, 8, 8, 8);
+            const material = new THREE.MeshStandardMaterial({
+                color: color,
+                roughness: 0.6,
+                metalness: 0.1
+            });
+
+            // 应用圆角效果
+            const positionAttribute = geometry.attributes.position;
+            const vertex = new THREE.Vector3();
+
+            for (let i = 0; i < positionAttribute.count; i++) {
+                vertex.fromBufferAttribute(positionAttribute, i);
+                vertex.normalize().multiplyScalar(radius);
+                positionAttribute.setXYZ(i, vertex.x, vertex.y, vertex.z);
+            }
+
+            return new THREE.Mesh(geometry, material);
+        }
+
+        // 创建六边形底座
+        const baseGeometry = new THREE.CylinderGeometry(8, 8, 1, 6);
+        const baseMaterial = new THREE.MeshStandardMaterial({
+            color: colors.gray,
+            roughness: 0.7,
+            metalness: 0.1
+        });
+        const base = new THREE.Mesh(baseGeometry, baseMaterial);
+        base.rotation.y = Math.PI / 6;
+        base.position.y = -0.5;
+        castleGroup.add(base);
+
+        // 创建中央塔
+        const tower = createRoundedCube(3, 12, 3, 0.2, colors.pink);
+        tower.position.y = 6;
+        castleGroup.add(tower);
+
+        // 创建钟面
+        const clockGeometry = new THREE.CylinderGeometry(1.5, 1.5, 0.2, 32);
+        const clockMaterial = new THREE.MeshStandardMaterial({
+            color: colors.accent1,
+            roughness: 0.4,
+            metalness: 0.3
+        });
+        const clock = new THREE.Mesh(clockGeometry, clockMaterial);
+        clock.position.set(0, 9, 1.6);
+        castleGroup.add(clock);
+
+        // 钟表细节
+        const clockHands = new THREE.Group();
+
+        // 设置指针为3:16
+        const hourAngle = -45 * (Math.PI / 180); // 3点位置 (-45°)
+        const minuteAngle = -96 * (Math.PI / 180); // 16分钟位置 (-96°)
+
+        const hourHand = new THREE.Mesh(
+            new THREE.BoxGeometry(0.1, 0.8, 0.1),
+            new THREE.MeshStandardMaterial({ color: 0x5a6b7c })
+        );
+        hourHand.position.y = 0.4;
+        hourHand.rotation.z = hourAngle;  // 设置3点钟位置
+
+        const minuteHand = new THREE.Mesh(
+            new THREE.BoxGeometry(0.08, 1.2, 0.08),
+            new THREE.MeshStandardMaterial({ color: 0x5a6b7c })
+        );
+        minuteHand.position.y = 0.6;
+        minuteHand.rotation.z = minuteAngle;  // 设置16分钟位置
+
+        clockHands.add(hourHand, minuteHand);
+        clock.add(clockHands);
+
+        // 创建时钟交互区域 - 扩大为整个钟面
+        const clockHoverArea = new THREE.Mesh(
+            new THREE.CylinderGeometry(1.8, 1.8, 0.5, 32),
+            new THREE.MeshBasicMaterial({
+                transparent: true,
+                opacity: 0,
+                side: THREE.DoubleSide
+            })
+        );
+        clockHoverArea.position.copy(clock.position);
+        clockHoverArea.rotation.copy(clock.rotation);
+        castleGroup.add(clockHoverArea);
+
+        // 创建HTML标签
+        const clockLabel = document.createElement('div');
+        clockLabel.className = 'floating-label clock-label';
+        clockLabel.innerHTML = '你好！我是Vivian李言姝，很高兴认识你，你也可以直接和我的"分身"聊天！(不过它有点慢，而且只能回答一些简历层面的问题) words failed me，希望和你产生真实链接，碰撞出更多灵感！';
+        clockLabel.style.display = 'none';
+        document.body.appendChild(clockLabel);
+
+        clockHoverArea.userData.label = clockLabel;
+        clockHoverArea.userData.link = null;
+
+        // 添加悬停效果
+        clockHoverArea.onHover = function () {
+            this.userData.label.style.display = 'block';
+        };
+
+        clockHoverArea.onUnhover = function () {
+            this.userData.label.style.display = 'none';
+        };
+
+        // 创建浮动楼梯
+        const staircase = new THREE.Group();
+        const stepCount = 8;
+        const stepHeight = 0.3;
+        const stepDepth = 0.8;
+        const stepWidth = 2;
+        const spiralRadius = 4;
+
+        for (let i = 0; i < stepCount; i++) {
+            const angle = (i / stepCount) * Math.PI * 1.5;
+            const x = Math.cos(angle) * spiralRadius;
+            const z = Math.sin(angle) * spiralRadius;
+            const y = i * stepHeight + 1;
+
+            const stepGeometry = new THREE.BoxGeometry(stepWidth, stepHeight, stepDepth);
+            const stepMaterial = new THREE.MeshStandardMaterial({
+                color: i % 2 === 0 ? colors.mint : colors.blue,
+                roughness: 0.6,
+                metalness: 0.1
+            });
+
+            const step = new THREE.Mesh(stepGeometry, stepMaterial);
+            step.position.set(x, y, z);
+            step.rotation.y = angle + Math.PI / 2;
+
+            // 为台阶添加圆角
+            step.geometry.computeVertexNormals();
+
+            staircase.add(step);
+        }
+
+        castleGroup.add(staircase);
+
+        // 创建带链接的浮动平台
+        const floatingPlatforms = new THREE.Group();
+        scene.add(floatingPlatforms);
+
+        // 平台数据
+        const platformData = [
+            {
+                id: 'manual',
+                label: '个人说明手册',
+                icon: 'book',
+                color: '#ff9a76',
+                position: new THREE.Vector3(-8, 4, -4),
+                link: 'https://d0b3czw0drs.feishu.cn/docx/S6nhd7LTioMGHhxxa61cRohDneZ?from=from_copylink'
+            },
+            {
+                id: 'bilibili',
+                label: 'bilibili',
+                icon: 'play-circle',
+                color: '#76b5ff',
+                position: new THREE.Vector3(7, 5, 2),
+                link: 'https://b23.tv/adllsXL'
+            },
+            {
+                id: 'wechat',
+                label: '公众号随笔',
+                icon: 'pen',
+                color: '#a8e6cf',
+                position: new THREE.Vector3(-5, 3, 6),
+                link: 'https://mp.weixin.qq.com/s/YARLs91ChuKKZlvUX1yCew'
+            },
+            {
+                id: 'xiaohongshu',
+                label: '小红书',
+                icon: 'camera',
+                color: '#ffcc66',
+                position: new THREE.Vector3(6, 6, -5),
+                link: 'https://www.xiaohongshu.com/user/profile/60c5e3ca00000000010096b2?xsec_token=YBWWQQNi5qxqQk5AxtPl3p_I_3xlh8z-sF8GqeuiU6vXc=&xsec_source=app_share&xhsshare=CopyLink&appuid=60c5e3ca00000000010096b2&apptime=1752400973&share_id=7d974415f49846888d0a43125c6d575a'
+            }
+        ];
+
+        // 创建平台和标签
+        const platformElements = [];
+
+        platformData.forEach((platform, index) => {
+            // 创建平台
+            const platformGeometry = new THREE.CylinderGeometry(1.5, 1.5, 0.3, 6);
+            const platformMaterial = new THREE.MeshStandardMaterial({
+                color: platform.color,
+                roughness: 0.5,
+                metalness: 0.2
+            });
+            const platformMesh = new THREE.Mesh(platformGeometry, platformMaterial);
+            platformMesh.position.copy(platform.position);
+            platformMesh.rotation.y = Math.PI / 6;
+            platformMesh.userData = { link: platform.link };
+            floatingPlatforms.add(platformMesh);
+
+            // 创建平台支架
+            const standGeometry = new THREE.CylinderGeometry(0.3, 0.5, 0.8, 6);
+            const standMaterial = new THREE.MeshStandardMaterial({
+                color: 0xd3d3d3,
+                roughness: 0.7
+            });
+            const stand = new THREE.Mesh(standGeometry, standMaterial);
+            stand.position.y = -0.55;
+            platformMesh.add(stand);
+
+            // 存储平台引用
+            platformElements.push(platformMesh);
+
+            // 创建HTML标签
+            const label = document.createElement('div');
+            label.className = 'floating-label';
+            label.innerHTML = `<i class="fas fa-${platform.icon}"></i> ${platform.label}`;
+            label.style.position = 'absolute';
+            label.style.display = 'none'; // 初始隐藏
+
+            document.body.appendChild(label);
+            platformMesh.userData.label = label;
+
+            // 添加悬停效果
+            platformMesh.onHover = function () {
+                this.material.emissive = new THREE.Color(0x444444);
+                this.material.needsUpdate = true;
+                this.scale.set(1.1, 1.1, 1.1);
+                this.userData.label.style.display = 'block';
+            };
+
+            platformMesh.onUnhover = function () {
+                this.material.emissive = new THREE.Color(0x000000);
+                this.material.needsUpdate = true;
+                this.scale.set(1, 1, 1);
+                this.userData.label.style.display = 'none';
+            };
+        });
+
+        // 将时钟交互区域添加到platformElements
+        platformElements.push(clockHoverArea);
+
+        // 创建装饰性浮动立方体
+        const floatingCubes = new THREE.Group();
+
+        for (let i = 0; i < 12; i++) {
+            const size = 0.5 + Math.random() * 0.5;
+            const cube = createRoundedCube(size, size, size, 0.1,
+                [colors.pink, colors.mint, colors.blue, colors.white][i % 4]
+            );
+
+            cube.position.set(
+                -10 + Math.random() * 20,
+                2 + Math.random() * 8,
+                -10 + Math.random() * 20
+            );
+
+            floatingCubes.add(cube);
+        }
+
+        scene.add(floatingCubes);
+
+        // 创建地平面
+        const groundGeometry = new THREE.PlaneGeometry(100, 100, 20, 20);
+        const groundMaterial = new THREE.MeshStandardMaterial({
+            color: colors.gray,
+            roughness: 0.9,
+            metalness: 0.05
+        });
+        const ground = new THREE.Mesh(groundGeometry, groundMaterial);
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -2;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // 添加背景元素
+        const backgroundTowers = new THREE.Group();
+
+        for (let i = 0; i < 8; i++) {
+            const angle = (i / 8) * Math.PI * 2;
+            const distance = 25 + Math.random() * 15;
+            const x = Math.cos(angle) * distance;
+            const z = Math.sin(angle) * distance;
+            const height = 3 + Math.random() * 6;
+
+            const tower = createRoundedCube(1.5, height, 1.5, 0.1,
+                [colors.pink, colors.mint, colors.blue][i % 3]
+            );
+            tower.position.set(x, height / 2 - 1, z);
+
+            backgroundTowers.add(tower);
+        }
+
+        scene.add(backgroundTowers);
+
+        // 信息气泡功能
+        const infoBubble = document.querySelector('.info-bubble');
+        infoBubble.addEventListener('click', () => {
+            alert('欢迎来到言姝的探索世界！\n\n这是一个受Monument Valley启发的互动空间。\n\n拖动鼠标来旋转视角，滚动缩放，\n点击浮动的平台可以访问言姝的内容。');
+        });
+
+        // 处理窗口大小变化
+        function onWindowResize() {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        }
+
+        window.addEventListener('resize', onWindowResize);
+
+        // 用于交互的光线投射器
+        const raycaster = new THREE.Raycaster();
+        const mouse = new THREE.Vector2();
+        let hoveredObject = null;
+
+        function onMouseMove(event) {
+            // 计算归一化设备坐标中的鼠标位置
+            mouse.x = (event.clientX / window.innerWidth) * 2 - 1;
+            mouse.y = -(event.clientY / window.innerHeight) * 2 + 1;
+        }
+
+        function onClick(event) {
+            // 使用相机和鼠标位置更新拾取射线
+            raycaster.setFromCamera(mouse, camera);
+
+            // 计算与拾取射线相交的对象
+            const intersects = raycaster.intersectObjects(platformElements);
+
+            if (intersects.length > 0 && intersects[0].object.userData.link) {
+                window.open(intersects[0].object.userData.link, '_blank');
+            }
+        }
+
+        window.addEventListener('mousemove', onMouseMove);
+        window.addEventListener('click', onClick);
+
+        // 动画循环
+        function animate() {
+            requestAnimationFrame(animate);
+
+            // 更新控制器
+            controls.update();
+
+            // 更新光线投射器
+            raycaster.setFromCamera(mouse, camera);
+
+            // 检查平台相交
+            const intersects = raycaster.intersectObjects(platformElements);
+
+            if (intersects.length > 0) {
+                if (hoveredObject !== intersects[0].object) {
+                    if (hoveredObject) hoveredObject.onUnhover();
+                    hoveredObject = intersects[0].object;
+                    hoveredObject.onHover();
+                }
+            } else {
+                if (hoveredObject) {
+                    hoveredObject.onUnhover();
+                    hoveredObject = null;
+                }
+            }
+
+            // 更新标签位置
+            platformElements.forEach(platform => {
+                if (platform.userData.label && platform.userData.label.style.display === 'block') {
+                    const vector = platform.position.clone();
+                    vector.project(camera);
+
+                    const x = (vector.x * 0.5 + 0.5) * window.innerWidth;
+                    const y = (-vector.y * 0.5 + 0.5) * window.innerHeight;
+
+                    platform.userData.label.style.left = `${x}px`;
+                    platform.userData.label.style.top = `${y}px`;
+                    platform.userData.label.style.transform = `translate(-50%, -100%) translateY(-15px)`;
+                }
+            });
+
+            // 柔和动画
+            const time = Date.now() * 0.001;
+
+            // 缓慢旋转城堡
+            castleGroup.rotation.y = time * 0.05;
+
+            // 浮动平台
+            platformElements.forEach((platform, i) => {
+                if (platform.userData.link) { // 只对链接平台应用浮动效果
+                    platform.position.y = platformData[i].position.y + Math.sin(time * 0.6 + i) * 0.8;
+                    platform.rotation.y += 0.005;
+                }
+            });
+
+            // 浮动立方体
+            floatingCubes.children.forEach((cube, i) => {
+                cube.position.y = 2 + Math.sin(time * 0.4 + i) * 1.5;
+                cube.rotation.x += 0.01;
+                cube.rotation.y += 0.01;
+            });
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+    </script>
+</body>
+
+</html>
